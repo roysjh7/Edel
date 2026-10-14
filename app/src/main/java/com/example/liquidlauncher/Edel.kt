@@ -109,7 +109,7 @@ fun EdelGem(modifier: Modifier = Modifier, progress: Float = 1f) {
         val f = p(0.65f, 0.40f)
         val g = p(0.35f, 0.40f)
 
-        fun facet(vararg pts: Offset): Path = Path().apply {
+        fun facet(pts: Array<Offset>): Path = Path().apply {
             moveTo(pts[0].x, pts[0].y)
             for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
             close()
