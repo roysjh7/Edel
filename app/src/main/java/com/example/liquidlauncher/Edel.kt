@@ -109,11 +109,16 @@ fun EdelGem(modifier: Modifier = Modifier, progress: Float = 1f) {
         val f = p(0.65f, 0.40f)
         val g = p(0.35f, 0.40f)
 
-        fun facet(vararg pts: Offset): Path = Path().apply {
-            moveTo(pts[0].x, pts[0].y)
-            for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
-            close()
-        }
+        val facets = listOf(
+            facet(listOf(a, b, f, g)) to listOf(Color(0xFFFFFFFF), Color(0xFFCFE6FF)),
+            facet(listOf(a, g, e)) to listOf(Color(0xFFA6DCFF), Color(0xFFCDB8FF)),
+            facet(listOf(b, c, f)) to listOf(Color(0xFFBBA8FF), Color(0xFFFF9EE8)),
+            facet(listOf(e, g, d)) to listOf(Color(0xFF6C8EFF), Color(0xFF8B6CFF)),
+            facet(listOf(g, f, d)) to listOf(Color(0xFFCBF5FF), Color(0xFF7FDBFF)),
+            facet(listOf(f, c, d)) to listOf(Color(0xFFA56BFF), Color(0xFFFF6FD8))
+        )
+
+        val outline = facet(listOf(a, b, c, d, e))
 
         // 뒤쪽 후광
         drawCircle(
