@@ -109,8 +109,7 @@ fun EdelGem(modifier: Modifier = Modifier, progress: Float = 1f) {
         val f = p(0.65f, 0.40f)
         val g = p(0.35f, 0.40f)
 
-        // 1. vararg 대신 Array<Offset>을 받도록 변경된 facet 함수
-        fun facet(pts: Array<Offset>): Path = Path().apply {
+        fun facet(vararg pts: Offset): Path = Path().apply {
             moveTo(pts[0].x, pts[0].y)
             for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
             close()
@@ -127,14 +126,13 @@ fun EdelGem(modifier: Modifier = Modifier, progress: Float = 1f) {
             center = Offset(w / 2f, h * 0.5f)
         )
 
-        // 2. 각 점들을 arrayOf로 감싼 facets 목록
         val facets = listOf(
-            facet(arrayOf(a, b, f, g)) to listOf(Color(0xFFFFFFFF), Color(0xFFCFE6FF)),
-            facet(arrayOf(a, g, e)) to listOf(Color(0xFFA6DCFF), Color(0xFFCDB8FF)),
-            facet(arrayOf(b, c, f)) to listOf(Color(0xFFBBA8FF), Color(0xFFFF9EE8)),
-            facet(arrayOf(e, g, d)) to listOf(Color(0xFF6C8EFF), Color(0xFF8B6CFF)),
-            facet(arrayOf(g, f, d)) to listOf(Color(0xFFCBF5FF), Color(0xFF7FDBFF)),
-            facet(arrayOf(f, c, d)) to listOf(Color(0xFFA56BFF), Color(0xFFFF6FD8))
+            facet(a, b, f, g) to listOf(Color(0xFFFFFFFF), Color(0xFFCFE6FF)),
+            facet(a, g, e) to listOf(Color(0xFFA6DCFF), Color(0xFFCDB8FF)),
+            facet(b, c, f) to listOf(Color(0xFFBBA8FF), Color(0xFFFF9EE8)),
+            facet(e, g, d) to listOf(Color(0xFF6C8EFF), Color(0xFF8B6CFF)),
+            facet(g, f, d) to listOf(Color(0xFFCBF5FF), Color(0xFF7FDBFF)),
+            facet(f, c, d) to listOf(Color(0xFFA56BFF), Color(0xFFFF6FD8))
         )
         facets.forEach { (path, colors) ->
             drawPath(path, Brush.linearGradient(colors, start = Offset(0f, 0f), end = Offset(w, h)))
@@ -144,7 +142,7 @@ fun EdelGem(modifier: Modifier = Modifier, progress: Float = 1f) {
         }
 
         // 빛줄기 (보석 모양으로만 보이게 클립)
-        val outline = facet(arrayOf(a, b, c, d, e))
+        val outline = facet(a, b, c, d, e)
         clipPath(outline) {
             val x = -w * 0.6f + sweep * w * 2.3f
             drawRect(
