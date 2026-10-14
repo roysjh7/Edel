@@ -10,21 +10,20 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -49,11 +49,13 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /**
- * 루트 화면.
- *  - HorizontalPager: 0 = 홈(4x7), 1 = 앱서랍 → 홈에서 왼쪽으로 넘기면 앱서랍
+ * 루트 화면 (Edel OS).
+ *  - HorizontalPager: 0 = 홈(4x7), 1 = 앱서랍
+ *    넘길 때: 배경 시차 이동 + 서랍 쪽으로 갈수록 배경이 흐려지고 어두워짐 + 페이지 3D 기울기·축소·페이드
  *  - 앱 실행: 아이콘 위치에서 앱 창이 확대(시스템 스케일업) + 홈은 그 점을 중심으로 살짝 확대·페이드
+ *  - 길게 누르기 메뉴는 아래에서 올라오는 유리 시트
+ *  - 프로세스 시작 시 Edel 인트로 한 번
  *  - 설정한 시간 동안 터치가 없으면 대기 화면(AOD 모드, 갤럭시 S24 이상에서만 켤 수 있음)
- *  - 런처 자체 잠금화면은 없다 (시스템 잠금을 그대로 사용)
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -66,21 +68,31 @@ fun LauncherApp(
     onImportIcons: () -> Unit,
     onAddWidget: (AppWidgetProviderInfo) -> Unit
 ) {
-    MaterialTheme(colorScheme = darkColorScheme()) {
+    MaterialTheme(
+        colorScheme = EdelColorScheme,
+        shapes = Shapes(extraLarge = RoundedCornerShape(30.dp))
+    ) {
         val ctx = LocalContext.current
         val view = LocalView.current
-        val density = LocalDensity.current
+        val dens = LocalDensity.current
         val activity = remember(ctx) { ctx.findActivity() }
         val pager = rememberPagerState(pageCount = { 2 })
         val scope = rememberCoroutineScope()
         val zoom = remember { Animatable(0f) }
         var zoomOrigin by remember { mutableStateOf(TransformOrigin.Center) }
         var screenCorner by remember { mutableStateOf(40.dp) }
-        var showMenu by remember { mutableStateOf(false) }
+        var sheet by remember { mutableStateOf<SheetSpec?>(null) }
+        val sheetHolder = remember { arrayOfNulls<SheetSpec>(1) } // 닫히는 애니메이션 동안 내용을 유지
+        if (sheet != null) sheetHolder[0] = sheet
+        val sheetOpen = sheet != null
         var showAodMenu by remember { mutableStateOf(false) }
         var showWidgetPicker by remember { mutableStateOf(false) }
         var askDefault by remember { mutableStateOf(!st.store.askedDefault && !isDefaultHome()) }
+        var introDone by remember { mutableStateOf(st.introPlayed) }
         val touch = remember { longArrayOf(System.nanoTime()) }
+
+        // 0 = 홈, 1 = 서랍 (넘기는 중에는 소수)
+        val pos = { pager.currentPage + pager.currentPageOffsetFraction }
 
         // 실제 화면 모서리 반지름 측정 (Android 12+, 창이 붙은 뒤에 값이 들어옴)
         LaunchedEffect(view) {
@@ -88,7 +100,7 @@ fun LauncherApp(
                 repeat(20) {
                     val rc = view.rootWindowInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)
                     if (rc != null) {
-                        screenCorner = with(density) { rc.radius.toDp() }
+                        screenCorner = with(dens) { rc.radius.toDp() }
                         return@LaunchedEffect
                     }
                     delay(100)
@@ -109,8 +121,8 @@ fun LauncherApp(
         }
 
         // ── AOD 모드: 유휴 감지 (설정한 시간 동안 터치 없음) ──
-        LaunchedEffect(st.resumed, st.aodActive, st.aodEnabled, st.aodIdleSec, showMenu, showAodMenu, showWidgetPicker, askDefault) {
-            if (!st.resumed || st.aodActive || !st.aodEnabled || showMenu || showAodMenu || showWidgetPicker || askDefault) {
+        LaunchedEffect(st.resumed, st.aodActive, st.aodEnabled, st.aodIdleSec, sheetOpen, showAodMenu, showWidgetPicker, askDefault) {
+            if (!st.resumed || st.aodActive || !st.aodEnabled || sheetOpen || showAodMenu || showWidgetPicker || askDefault) {
                 return@LaunchedEffect
             }
             touch[0] = System.nanoTime()
@@ -149,6 +161,27 @@ fun LauncherApp(
             }
         }
 
+        fun homeMenu() {
+            sheet = SheetSpec(
+                title = "Edel OS",
+                subtitle = "홈 화면 설정",
+                actions = listOf(
+                    SheetAction("배경화면 선택", "🖼") { onPickWallpaper() },
+                    SheetAction("배경화면 초기화", "🌌") { st.clearWallpaper() },
+                    SheetAction("위젯 추가", "🧩") { showWidgetPicker = true },
+                    SheetAction("시계 위젯 추가", "🕐") {
+                        if (!st.addClock()) {
+                            Toast.makeText(ctx, "시계 위젯(4×2)을 둘 빈 공간이 없어요", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    SheetAction("아이콘 팩 가져오기 (여러 장)", "🎨") { onImportIcons() },
+                    SheetAction("아이콘 모두 기본으로", "🔄") { st.clearAllCustomIcons() },
+                    SheetAction("AOD(대기 화면) 모드", "🌙") { showAodMenu = true },
+                    SheetAction("기본 홈 앱으로 지정", "🏠") { onSetDefault() }
+                )
+            )
+        }
+
         CompositionLocalProvider(LocalScreenCorner provides screenCorner) {
             Box(
                 Modifier
@@ -163,7 +196,19 @@ fun LauncherApp(
                         }
                     }
             ) {
-                Backdrop(st.wallpaper, animated = !st.aodActive)
+                Backdrop(
+                    st.wallpaper,
+                    animated = !st.aodActive,
+                    parallax = { pos().coerceIn(0f, 1f) },
+                    blurPx = { pos().coerceIn(0f, 1f) * 20f }
+                )
+                // 서랍으로 갈수록 어두워지는 막
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = pos().coerceIn(0f, 1f) }
+                        .background(Color.Black.copy(alpha = 0.34f))
+                )
 
                 HorizontalPager(
                     state = pager,
@@ -179,28 +224,46 @@ fun LauncherApp(
                         Modifier
                             .fillMaxSize()
                             .graphicsLayer {
-                                val o = abs((pager.currentPage - page) + pager.currentPageOffsetFraction)
-                                    .coerceIn(0f, 1f)
-                                val s = 1f - 0.12f * o
+                                // o: 이 페이지가 가운데에서 얼마나 떨어졌는지 (왼쪽 +, 오른쪽 -)
+                                val o = (pager.currentPage - page) + pager.currentPageOffsetFraction
+                                val a = abs(o).coerceIn(0f, 1f)
+                                val s = 1f - 0.10f * a
                                 scaleX = s
                                 scaleY = s
-                                alpha = 1f - 0.7f * o
+                                alpha = 1f - 0.75f * a
+                                cameraDistance = 14f * density
+                                rotationY = -o * 7f
                             }
                     ) {
                         if (page == 0) {
                             HomeScreen(
                                 st,
+                                enterKey = st.homeTick * 2 + (if (introDone) 1 else 0),
                                 onLaunch = launchApp,
                                 onPickIcon = onPickIcon,
-                                onLongPressEmpty = { showMenu = true }
+                                onLongPressEmpty = { homeMenu() },
+                                onShowSheet = { sheet = it }
                             )
                         } else {
-                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.28f))) {
-                                DrawerScreen(st, onLaunch = launchApp, onPickIcon = onPickIcon)
-                            }
+                            DrawerScreen(
+                                st,
+                                onLaunch = launchApp,
+                                onPickIcon = onPickIcon,
+                                onShowSheet = { sheet = it }
+                            )
                         }
                     }
                 }
+
+                // 페이지 표시 (늘어나는 알약)
+                PageDots(
+                    count = 2,
+                    position = pos,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(bottom = 5.dp)
+                )
 
                 // 대기 화면 (아무 곳이나 터치하면 해제)
                 AnimatedVisibility(
@@ -210,32 +273,18 @@ fun LauncherApp(
                 ) {
                     AodScreen(st) { st.exitAod() }
                 }
-            }
-        }
 
-        if (showMenu) {
-            AlertDialog(
-                onDismissRequest = { showMenu = false },
-                confirmButton = {},
-                title = { Text("홈 화면") },
-                text = {
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        TextButton(onClick = { showMenu = false; onPickWallpaper() }) { Text("배경화면 선택") }
-                        TextButton(onClick = { showMenu = false; st.clearWallpaper() }) { Text("배경화면 초기화") }
-                        TextButton(onClick = { showMenu = false; showWidgetPicker = true }) { Text("위젯 추가") }
-                        TextButton(onClick = { showMenu = false; onImportIcons() }) { Text("아이콘 팩 가져오기 (여러 장)") }
-                        TextButton(onClick = { showMenu = false; st.clearAllCustomIcons() }) { Text("아이콘 모두 기본으로") }
-                        TextButton(onClick = {
-                            showMenu = false
-                            if (!st.addClock()) {
-                                Toast.makeText(ctx, "시계 위젯(4×2)을 둘 빈 공간이 없어요", Toast.LENGTH_SHORT).show()
-                            }
-                        }) { Text("시계 위젯 추가 (기본 제공)") }
-                        TextButton(onClick = { showMenu = false; showAodMenu = true }) { Text("AOD(대기 화면) 모드") }
-                        TextButton(onClick = { showMenu = false; onSetDefault() }) { Text("기본 홈 앱으로 지정") }
+                // 길게 누르기 메뉴 시트
+                EdelSheet(visible = sheetOpen, spec = sheetHolder[0], onDismiss = { sheet = null })
+
+                // Edel 인트로 (프로세스 시작 시 한 번)
+                if (!introDone) {
+                    EdelIntro {
+                        st.introPlayed = true
+                        introDone = true
                     }
                 }
-            )
+            }
         }
 
         if (showAodMenu) AodSettingsDialog(st) { showAodMenu = false }
@@ -251,7 +300,7 @@ fun LauncherApp(
         if (askDefault) {
             AlertDialog(
                 onDismissRequest = { askDefault = false; st.store.askedDefault = true },
-                title = { Text("기본 홈 앱으로 지정할까요?") },
+                title = { Text("Edel OS를 기본 홈 앱으로 지정할까요?") },
                 text = { Text("지정하면 홈 버튼을 눌렀을 때 이 런처가 열려요.") },
                 confirmButton = {
                     TextButton(onClick = {

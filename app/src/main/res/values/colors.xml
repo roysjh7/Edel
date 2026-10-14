@@ -1,3 +1,5 @@
 <resources>
-    <color name="ic_launcher_background">#2A2F6B</color>
+    <color name="edel_ink">#FF070716</color>
+    <color name="edel_violet">#FF8B6CFF</color>
+    <color name="edel_cyan">#FF45E3FF</color>
 </resources>

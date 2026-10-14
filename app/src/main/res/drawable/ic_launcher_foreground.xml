@@ -3,7 +3,45 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- 후광 -->
     <path
-        android:fillColor="#CCFFFFFF"
-        android:pathData="M54,28 C54,28 34,52 34,65 C34,76 43,84 54,84 C65,84 74,76 74,65 C74,52 54,28 54,28 Z" />
+        android:fillColor="#2EFFFFFF"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+    <!-- 보석 면 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,35L66,35L61,50L47,50Z"
+        android:strokeColor="#99FFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="0.8" />
+    <path
+        android:fillColor="#CDE7FF"
+        android:pathData="M42,35L47,50L30,50Z"
+        android:strokeColor="#99FFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="0.8" />
+    <path
+        android:fillColor="#E4CFFF"
+        android:pathData="M66,35L78,50L61,50Z"
+        android:strokeColor="#99FFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="0.8" />
+    <path
+        android:fillColor="#8DA8FF"
+        android:pathData="M30,50L47,50L54,80Z"
+        android:strokeColor="#99FFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="0.8" />
+    <path
+        android:fillColor="#BFEFFF"
+        android:pathData="M47,50L61,50L54,80Z"
+        android:strokeColor="#99FFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="0.8" />
+    <path
+        android:fillColor="#B58CFF"
+        android:pathData="M61,50L78,50L54,80Z"
+        android:strokeColor="#99FFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="0.8" />
 </vector>

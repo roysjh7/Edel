@@ -87,21 +87,21 @@ fun AodSettingsDialog(st: LauncherState, onDismiss: () -> Unit) {
                         checked = st.aodEnabled,
                         enabled = st.aodSupported,
                         onCheckedChange = { on ->
-                            if (on) showWarning = true else st.changeAodEnabled(false)
+                            if (on) showWarning = true else st.setAodEnabled(false)
                         }
                     )
                 }
                 OptionRow("대기 진입 시간", listOf(15, 30, 60), st.aodIdleSec, { "${it}초" }) {
-                    st.changeAodIdleSec(it)
+                    st.setAodIdleSec(it)
                 }
                 OptionRow("최대 유지 시간", listOf(1, 3, 5, 10), st.aodMaxMin, { "${it}분" }) {
-                    st.changeAodMaxMin(it)
+                    st.setAodMaxMin(it)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("충전 중에만 사용", modifier = Modifier.weight(1f))
                     Switch(
                         checked = st.aodOnlyCharging,
-                        onCheckedChange = { st.changeAodOnlyCharging(it) }
+                        onCheckedChange = { st.setAodOnlyCharging(it) }
                     )
                 }
                 Text(
@@ -130,7 +130,7 @@ fun AodSettingsDialog(st: LauncherState, onDismiss: () -> Unit) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    st.changeAodEnabled(true)
+                    st.setAodEnabled(true)
                     showWarning = false
                 }) { Text("이해했고 켤게요") }
             },
