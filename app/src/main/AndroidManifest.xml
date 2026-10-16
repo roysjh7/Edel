@@ -23,7 +23,7 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.EdelOS">
+        android:theme="@style/Theme.LiquidLauncher">
 
         <activity
             android:name=".MainActivity"

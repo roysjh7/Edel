@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.EdelOS" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.LiquidLauncher" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@android:color/black</item>
     </style>
 </resources>

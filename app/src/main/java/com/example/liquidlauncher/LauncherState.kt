@@ -61,14 +61,11 @@ class LauncherState(private val ctx: Context) {
     var aodActive by mutableStateOf(false)
         private set
 
-    /** Edel 인트로를 이 프로세스에서 이미 보여줬는지 (Activity 가 다시 만들어져도 반복하지 않는다) */
-    var introPlayed = false
-
     /** 런처가 화면 맨 앞(resumed)인지 */
     var resumed by mutableStateOf(false)
 
     /** 켜기 요청. 지원하지 않는 기기면 false (켜지지 않음) */
-    fun setAodEnabled(on: Boolean): Boolean {
+    fun changeAodEnabled(on: Boolean): Boolean {
         if (on && !aodSupported) return false
         aodEnabled = on
         store.aodEnabled = on
@@ -76,17 +73,17 @@ class LauncherState(private val ctx: Context) {
         return true
     }
 
-    fun setAodIdleSec(v: Int) {
+    fun changeAodIdleSec(v: Int) {
         aodIdleSec = v
         store.aodIdleSec = v
     }
 
-    fun setAodMaxMin(v: Int) {
+    fun changeAodMaxMin(v: Int) {
         aodMaxMin = v
         store.aodMaxMin = v
     }
 
-    fun setAodOnlyCharging(v: Boolean) {
+    fun changeAodOnlyCharging(v: Boolean) {
         aodOnlyCharging = v
         store.aodOnlyCharging = v
     }
