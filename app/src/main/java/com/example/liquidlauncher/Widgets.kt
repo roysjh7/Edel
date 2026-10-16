@@ -181,61 +181,51 @@ private fun loadPreview(ctx: Context, info: AppWidgetProviderInfo): ImageBitmap?
     null
 }
 
+/** 위젯 추가 시트의 내용: 설치된 위젯 목록(미리보기 + 크기). 항목을 탭하면 onPick */
 @Composable
-fun WidgetPickerDialog(
-    st: LauncherState,
-    onPick: (AppWidgetProviderInfo) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun WidgetPickerContent(st: LauncherState, onPick: (AppWidgetProviderInfo) -> Unit) {
     val ctx = LocalContext.current
     val list = remember { st.widgets.providers() }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("위젯 추가") },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("닫기") } },
-        text = {
-            if (list.isEmpty()) {
-                Text("설치된 위젯이 없어요.")
-            } else {
-                LazyColumn(
-                    Modifier.heightIn(max = 460.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+    if (list.isEmpty()) {
+        SheetNote("설치된 위젯이 없어요.")
+    } else {
+        LazyColumn(
+            Modifier.fillMaxWidth().heightIn(max = 460.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(list, key = { it.provider.flattenToString() }) { info ->
+                val preview = remember(info) { loadPreview(ctx, info) }
+                val (c, r) = remember(info) { st.widgets.spansFor(info, st.cellWdp, st.cellHdp) }
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(ContinuousCornerShape(16.dp))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .tap { onPick(info) }
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(list, key = { it.provider.flattenToString() }) { info ->
-                        val preview = remember(info) { loadPreview(ctx, info) }
-                        val (c, r) = remember(info) { st.widgets.spansFor(info, st.cellWdp, st.cellHdp) }
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(ContinuousCornerShape(14.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
-                                .clickable { onPick(info) }
-                                .padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
-                                if (preview != null) {
-                                    Image(
-                                        bitmap = preview,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Fit,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Column {
-                                Text(st.widgets.widgetLabel(info), fontSize = 15.sp, color = Color.White)
-                                Text(
-                                    "${st.widgets.appLabel(info)} · ${c}×${r}칸",
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.65f)
-                                )
-                            }
+                    Box(Modifier.size(84.dp), contentAlignment = Alignment.Center) {
+                        if (preview != null) {
+                            Image(
+                                bitmap = preview,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(st.widgets.widgetLabel(info), fontSize = 15.sp, color = Color.White)
+                        Text(
+                            "${st.widgets.appLabel(info)} · ${c}×${r}칸",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.65f)
+                        )
                     }
                 }
             }
         }
-    )
+    }
 }

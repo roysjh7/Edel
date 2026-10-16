@@ -1,5 +1,3 @@
 <resources>
-    <color name="edel_ink">#FF070716</color>
-    <color name="edel_violet">#FF8B6CFF</color>
-    <color name="edel_cyan">#FF45E3FF</color>
+    <color name="edel_primary">#4F6BFF</color>
 </resources>
